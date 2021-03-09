@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SearchBar } from 'react-native-elements';
+
 import db from '../config';
+import firebase from 'firebase';
 
 export default class ReadStoryScreen extends React.Component {
     constructor() {
@@ -13,42 +15,65 @@ export default class ReadStoryScreen extends React.Component {
         }
     }
 
-    didComponentMount(){
-        this.state.selectStories.push(this.state.allStories);
+    componentDidMount() {
+        this.getData();
+        //this.filterData(this.state.searchText);
     }
 
-
-    retrieveStories = (text) => {
+    getData() {
         this.setState({
-            searchText: text,
-            allStories: []
+            allStories: [],
         });
 
         db.collection("stories")
-            .get()
-            .then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    this.state.allStories.push(doc.data());
+            .onSnapshot((snapshot) => {
+                snapshot.forEach((doc) => {
+                    var data = doc.data();
+
+                    this.state.allStories.push(data);
+                    this.state.selectStories.push(data);
                 });
             });
 
-        this.filterData();
+        this.mapper();
+
+        console.log(this.state.selectStories);
     }
 
-    filterData() {
-        if (this.searchText !== '') {
-            var index = 0;
+    filterData(text) {
+        const newData = this.state.allStories.filter((item) => {
+            const itemData = item.title ? item.title.toUpperCase() : ''.toUpperCase();
+            const textData = text.toUpperCase();
+            return itemData.indexOf(textData) > -1;
+        });
+        this.setState({
+            selectStories: newData,
+            searchText: text,
+        });
+    }
 
-            for (var k in this.state.allStories) {
-                if (this.state.allStories[k].Title.slice(0, this.state.searchText.length) === this.state.searchText) {
-                    this.state.selectStories.push(this.state.allStories[k]);
-
-                    console.log(this.state.selectStories);
-                }
-            }
+    mapper = () => {
+        if (this.state.searchText !== '') {
+            return this.state.selectStories.map((element) => {
+                return (
+                    <View>
+                        <Text>
+                            {element.title}
+                        </Text>
+                    </View>
+                );
+            })
         }
-        else{
-            this.state.selectStories.push(this.state.allStories);
+        else {
+            return this.state.allStories.map((element) => {
+                return (
+                    <View>
+                        <Text>
+                            {element.title}
+                        </Text>
+                    </View>
+                );
+            })
         }
     }
 
@@ -58,26 +83,17 @@ export default class ReadStoryScreen extends React.Component {
                 <View>
                     <SearchBar
                         placeholder={'Type here...'}
-                        onChangeText={text => this.retrieveStories(text)}
+                        onChangeText={(text) => {
+                            this.filterData(text);
+                        }}
                         value={this.state.searchText} />
                 </View>
-
                 <View>
-                    {this.state.selectStories.map((element) => {
-                        return (
-                            <View>
-                                <Text>
-                                    {element.Title}
-                                </Text>
-                            </View>
-                        );
-                    })
-                    }
+                    {this.mapper()}
                 </View>
             </View >
         );
     }
 }
 
-const styles = StyleSheet.create({
-});
+const styles = StyleSheet.create({});

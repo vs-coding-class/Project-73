@@ -14,9 +14,9 @@ export default class WriteStoryScreen extends React.Component {
 
     submitStory = () => {
         db.collection('stories').doc(this.state.title).set({
-            "Title": this.state.title,
-            "Author": this.state.author,
-            "Story": this.state.story
+            "title": this.state.title,
+            "author": this.state.author,
+            "story": this.state.story
         });
 
         //ToastAndroid.show('Story submitted.', ToastAndroid.SHORT);
